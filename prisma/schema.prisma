@@ -1,0 +1,84 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int     @default(autoincrement()) @id
+  email     String  @unique
+  username  String  @unique
+  name      String?
+  password  String
+  posts     Post[]
+}
+
+model Post {
+  id        Int       @default(autoincrement()) @id
+  content   String
+  author    User?     @relation(fields: [authorId], references: [id])
+  authorId  Int?
+  createdAt DateTime  @default(now())
+}
+
+model Project {
+  id          String       @id @default(uuid())
+  title       String
+  description String
+  imageUrl    String?
+  projectUrl  String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  techStacks  TechStack[]  @relation("ProjectTechStack")
+}
+
+model TechStack {
+  id          String       @id @default(uuid())
+  name        String       @unique
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  projects    Project[]    @relation("ProjectTechStack")
+}
+
+
+model Experience {
+  id            String   @id @default(uuid())
+  position      String
+  company       String
+  description   String
+  startDate     DateTime
+  endDate       DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  achievements  Achievement[]
+}
+
+model Achievement {
+  id           String       @id @default(uuid())
+  description  String
+  experienceId String
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  experience   Experience   @relation(fields: [experienceId], references: [id])
+}
+
+model Profile {
+  id          String        @id @default(uuid())
+  name        String
+  title       String
+  bio         String
+  avatarUrl   String?
+  resumeUrl   String?
+  socials     String?       // Store serialized JSON or a simple string
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}

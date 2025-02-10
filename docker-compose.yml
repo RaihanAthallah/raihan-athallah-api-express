@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  app:
+    image: node:18 # Use the official Node.js 18 image
+    container_name: express-app
+    working_dir: /app
+    volumes:
+      - .:/app
+    ports:
+      - "3000:3000" # Expose port 3000
+    environment:
+      DATABASE_URL: "postgresql://raihan:Adekku123@157.230.42.138:5432/portofolio?schema=public"
+      PORT: 3000
+      JWT_SECRET: "3c5e468ad9b6a69f4e84d91e28a9c85b344ee9a0919f2a4a19b65770a8d2f5a97cbb17622d31a8d3a7cb5f493a1c3c5d482b81e70fa193e4c6d9ff2ea1b8b542"
+    command: ["npm", "start"] # Command to start your Express app (assumes npm start is set in package.json)
