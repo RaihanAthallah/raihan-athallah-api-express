@@ -1,14 +1,13 @@
-name: CI/CD Pipeline
+name: CI/CD Pipeline for Express.js API
 
 on:
   push:
     branches:
-      - main  # Change this to your deployment branch
+      - main # Change this if needed
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -20,13 +19,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: 'npm'
+          cache: "npm"
 
       - name: Install dependencies
         run: npm install
 
       - name: Build TypeScript project
-        run: npm run build  # Ensure your package.json has a "build" script
+        run: npm run build # Ensure package.json has a "build" script
 
       - name: Build Docker image
         run: |
@@ -43,9 +42,8 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-
     steps:
-      - name: Deploy to server
+      - name: Deploy to server via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -54,10 +52,6 @@ jobs:
           script: |
             IMAGE_NAME=ghcr.io/${{ secrets.GHCR_USERNAME }}/express-api
             CONTAINER_NAME=express-api
-            ENV_PATH=/home/${{ secrets.SSH_USER }}/express-api/.env
-
-            echo "Creating .env file..."
-            echo "${{ secrets.ENV_FILE }}" > $ENV_PATH
 
             echo "Pulling latest image..."
             docker pull $IMAGE_NAME:latest
@@ -65,14 +59,14 @@ jobs:
             echo "Stopping and removing old container..."
             docker rm -f $CONTAINER_NAME || true
 
+            echo "Decoding .env file and saving it..."
+            echo "${{ secrets.ENV_FILE }}" | base64 --decode > /home/${{ secrets.SSH_USER }}/.env
+
             echo "Running new container..."
             docker run -d --name $CONTAINER_NAME -p 3000:3000 \
-              --env-file $ENV_PATH \
+              --env-file /home/${{ secrets.SSH_USER }}/.env \
               --restart always \
               $IMAGE_NAME:latest
-
-            echo "Cleanup old images..."
-            docker image prune -af
 
             echo "Cleanup old images..."
             docker image prune -af
