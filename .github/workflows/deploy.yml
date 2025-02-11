@@ -39,7 +39,7 @@ jobs:
           docker push $IMAGE_NAME:latest
           docker push $IMAGE_NAME:${{ github.sha }}
 
-  deploy:
+deploy:
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -52,6 +52,7 @@ jobs:
           script: |
             IMAGE_NAME=ghcr.io/${{ secrets.GHCR_USERNAME }}/express-api
             CONTAINER_NAME=express-api
+            ENV_PATH="/home/${{ secrets.SSH_USER }}/.env"
 
             echo "Pulling latest image..."
             docker pull $IMAGE_NAME:latest
@@ -59,12 +60,12 @@ jobs:
             echo "Stopping and removing old container..."
             docker rm -f $CONTAINER_NAME || true
 
-            echo "Decoding .env file and saving it..."
-            echo "${{ secrets.ENV_FILE }}" | base64 --decode > /home/${{ secrets.SSH_USER }}/.env
+            echo "Saving .env file..."
+            echo "${{ secrets.ENV_FILE }}" > $ENV_PATH
 
             echo "Running new container..."
             docker run -d --name $CONTAINER_NAME -p 3000:3000 \
-              --env-file /home/${{ secrets.SSH_USER }}/.env \
+              --env-file $ENV_PATH \
               --restart always \
               $IMAGE_NAME:latest
 
