@@ -38,35 +38,36 @@ jobs:
           IMAGE_NAME=ghcr.io/${{ secrets.GHCR_USERNAME }}/express-api
           docker push $IMAGE_NAME:latest
           docker push $IMAGE_NAME:${{ github.sha }}
-
+  
   deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy to server via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            IMAGE_NAME=ghcr.io/${{ secrets.GHCR_USERNAME }}/express-api
-            CONTAINER_NAME=express-api
-
-            echo "Pulling latest image..."
-            docker pull $IMAGE_NAME:latest
-
-            echo "Stopping and removing old container..."
-            docker rm -f $CONTAINER_NAME || true
-
-            echo "Decoding .env file and saving it..."
-            echo "${{ secrets.ENV_FILE }}" | base64 --decode > /home/${{ secrets.SSH_USER }}/.env
-
-            echo "Running new container..."
-            docker run -d --name $CONTAINER_NAME -p 3000:3000 \
-              --env-file /home/${{ secrets.SSH_USER }}/.env \
-              --restart always \
-              $IMAGE_NAME:latest
-
-            echo "Cleanup old images..."
-            docker image prune -af
+      needs: build
+      runs-on: ubuntu-latest
+      steps:
+        - name: Deploy to server via SSH
+          uses: appleboy/ssh-action@v1.0.3
+          with:
+            host: ${{ secrets.SSH_HOST }}
+            username: ${{ secrets.SSH_USER }}
+            key: ${{ secrets.SSH_PRIVATE_KEY }}
+            script: |
+              IMAGE_NAME=ghcr.io/${{ secrets.GHCR_USERNAME }}/express-api
+              CONTAINER_NAME=express-api
+              ENV_PATH="/${{ secrets.SSH_USER }}/raihan-portofolio/.env"
+  
+              echo "Pulling latest image..."
+              docker pull $IMAGE_NAME:latest
+  
+              echo "Stopping and removing old container..."
+              docker rm -f $CONTAINER_NAME || true
+  
+              echo "Saving .env file..."
+              echo "${{ secrets.ENV_FILE }}" > $ENV_PATH
+  
+              echo "Running new container..."
+              docker run -d --name $CONTAINER_NAME -p 3000:3000 \
+                --env-file $ENV_PATH \
+                --restart always \
+                $IMAGE_NAME:latest
+  
+              echo "Cleanup old images..."
+              docker image prune -af
