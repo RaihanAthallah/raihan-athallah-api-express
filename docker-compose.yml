@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   app:
-    image: ghcr.io/your-github-username/express-api:latest
+    image: ghcr.io/raihanathallah/express-api:latest
     container_name: raihan-portofolio-api-express
     restart: always # Ensures the container restarts on failure
     working_dir: /app
