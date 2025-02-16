@@ -1,18 +1,19 @@
-import jwt from "jsonwebtoken";
+import jwt, { SignOptions, Secret } from "jsonwebtoken";
 import { UserLoginData } from "../models/dto/user.dto";
 
-const JWT_SECRET = process.env.JWT_SECRET || "your_secret_key";
+const JWT_SECRET: Secret = process.env.JWT_SECRET || "your_secret_key";
 
-export const generateToken = (user: UserLoginData) => {
+export const generateToken = (user: UserLoginData): string => {
   const payload = {
     email: user.email,
-    Username: user.username,
+    username: user.username, // Ensure consistent casing
   };
-  const secret = process.env.JWT_SECRET || "your-secret-key"; // Make sure you have a secret key
-  const options = { expiresIn: "1h" };
-  return jwt.sign(payload, secret, options);
+
+  const options: SignOptions = { expiresIn: "1h" }; // Explicitly typed
+
+  return jwt.sign(payload, JWT_SECRET, options);
 };
 
-export const verifyToken = (token: string) => {
+export const verifyToken = (token: string): any => {
   return jwt.verify(token, JWT_SECRET);
 };
