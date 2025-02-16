@@ -3,7 +3,7 @@ name: CI/CD Pipeline for Express.js API
 on:
   push:
     branches:
-      - main # Change this if needed
+      - main
 
 jobs:
   build:
@@ -22,52 +22,49 @@ jobs:
           cache: "npm"
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci --omit=dev
 
       - name: Build TypeScript project
-        run: npm run build # Ensure package.json has a "build" script
+        run: npm run build
 
-      - name: Build Docker image
+      - name: Build and tag Docker image
         run: |
           IMAGE_NAME=ghcr.io/${{ secrets.GHCR_USERNAME }}/express-api
           docker build -t $IMAGE_NAME:latest .
           docker tag $IMAGE_NAME:latest $IMAGE_NAME:${{ github.sha }}
 
-      - name: Push Docker image
+      - name: Push Docker image to GHCR
         run: |
           IMAGE_NAME=ghcr.io/${{ secrets.GHCR_USERNAME }}/express-api
           docker push $IMAGE_NAME:latest
           docker push $IMAGE_NAME:${{ github.sha }}
-  
+
   deploy:
-      needs: build
-      runs-on: ubuntu-latest
-      steps:
-        - name: Deploy to server via SSH
-          uses: appleboy/ssh-action@v1.0.3
-          with:
-            host: ${{ secrets.SSH_HOST }}
-            username: ${{ secrets.SSH_USER }}
-            key: ${{ secrets.SSH_PRIVATE_KEY }}
-            script: |
-              IMAGE_NAME=ghcr.io/${{ secrets.GHCR_USERNAME }}/express-api
-              CONTAINER_NAME=express-api
-              ENV_PATH="/${{ secrets.SSH_USER }}/raihan-portofolio/.env"
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to VM via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            IMAGE_NAME=ghcr.io/${{ secrets.GHCR_USERNAME }}/express-api
+            CONTAINER_NAME=express-api
+            ENV_PATH="/home/${{ secrets.SSH_USER }}/.env"
   
-              echo "Pulling latest image..."
-              docker pull $IMAGE_NAME:latest
+            echo "Pulling latest image..."
+            docker pull $IMAGE_NAME:latest
   
-              echo "Stopping and removing old container..."
-              docker rm -f $CONTAINER_NAME || true
+            echo "Stopping and removing old container..."
+            docker rm -f $CONTAINER_NAME || true
   
-              echo "Saving .env file..."
-              echo "${{ secrets.ENV_FILE }}" > $ENV_PATH
+            echo "Running new container..."
+            docker run -d --name $CONTAINER_NAME -p 8090:8090 \
+              --env-file $ENV_PATH \
+              --restart always \
+              $IMAGE_NAME:latest
   
-              echo "Running new container..."
-              docker run -d --name $CONTAINER_NAME -p 3000:3000 \
-                --env-file $ENV_PATH \
-                --restart always \
-                $IMAGE_NAME:latest
-  
-              echo "Cleanup old images..."
-              docker image prune -af
+            echo "Removing unused Docker images..."
+            docker image prune -af
