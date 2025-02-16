@@ -10,5 +10,6 @@ experienceRoutes.put("/:id", authenticate, experienceController.updateExperience
 experienceRoutes.delete("/:id", authenticate, experienceController.deleteExperience);
 experienceRoutes.get("/:id", experienceController.getExperienceById);
 experienceRoutes.get("/", experienceController.getExperiences);
+experienceRoutes.get("/hello", experienceController.helloWorld);
 
 export default experienceRoutes;
