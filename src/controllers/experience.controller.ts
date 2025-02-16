@@ -58,7 +58,7 @@ const getExperiences = async (req: Request, res: Response) => {
 };
 
 const helloWorld = async (req: Request, res: Response) => {
-  res.json({ message: "Hello, World!" });
+  res.status(200).json({ message: "Hello, World!", status: 200 });
 };
 
 export default {
