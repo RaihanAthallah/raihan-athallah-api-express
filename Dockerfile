@@ -13,6 +13,9 @@ RUN npm ci --omit=dev
 # Copy the rest of the application files
 COPY . .
 
+# Generate Prisma Client
+RUN npx prisma generate
+
 # Build the TypeScript project
 RUN npm run build
 
@@ -26,7 +29,15 @@ WORKDIR /app
 COPY --from=builder /app/package.json /app/package-lock.json ./
 RUN npm ci --omit=dev
 
+# Copy Prisma client to final image
+COPY --from=builder /app/node_modules/.prisma /app/node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma /app/node_modules/@prisma
+
+# Copy built files
 COPY --from=builder /app/dist ./dist
+
+# Ensure the Prisma schema is included (if required)
+COPY --from=builder /app/prisma ./prisma
 
 # Expose the application port
 EXPOSE 8090
